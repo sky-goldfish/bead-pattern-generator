@@ -31,11 +31,6 @@ class BeadRenderer {
       showGridLines = true,
       showColorCodes = false,
       backgroundColor = '#ffffff',
-      edgeEnhance = false,
-      edgeSensitivity = 5,
-      edgeColor = '#222222',
-      edgeWidth = 2,
-      edgeData = null,       // 外部预计算的边缘数据
     } = options;
 
     // 使用独立临时画布，不污染 this.canvas
@@ -52,12 +47,6 @@ class BeadRenderer {
     // 清空并填充背景
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    // 边缘检测（仅在启用且未传入预计算数据时执行）
-    let edges = edgeData;
-    if (edgeEnhance && !edges) {
-      edges = this.detectEdges(matchedColors, width, height, edgeSensitivity);
-    }
 
     // 绘制每个拼豆格子
     for (let y = 0; y < height; y++) {
@@ -81,57 +70,6 @@ class BeadRenderer {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(color.code, px + cellSize / 2, py + cellSize / 2);
-        }
-      }
-    }
-
-    // 绘制边缘轮廓（在网格线之前绘制，使轮廓更突出）
-    if (edgeEnhance && edges) {
-      ctx.strokeStyle = edgeColor;
-      ctx.lineWidth = edgeWidth;
-
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const index = y * width + x;
-          if (!edges[index]) continue;
-
-          const color = matchedColors[index];
-          if (color.isBg) continue;
-
-          const px = x * cellSize;
-          const py = y * cellSize;
-
-          // 检查四条边是否需要绘制（只在与不同色邻居的边上画线）
-          const idx = y * width + x;
-
-          // 上边
-          if (y === 0 || matchedColors[idx - width].code !== color.code || matchedColors[idx - width].isBg) {
-            ctx.beginPath();
-            ctx.moveTo(px, py);
-            ctx.lineTo(px + cellSize, py);
-            ctx.stroke();
-          }
-          // 下边
-          if (y === height - 1 || matchedColors[idx + width].code !== color.code || matchedColors[idx + width].isBg) {
-            ctx.beginPath();
-            ctx.moveTo(px, py + cellSize);
-            ctx.lineTo(px + cellSize, py + cellSize);
-            ctx.stroke();
-          }
-          // 左边
-          if (x === 0 || matchedColors[idx - 1].code !== color.code || matchedColors[idx - 1].isBg) {
-            ctx.beginPath();
-            ctx.moveTo(px, py);
-            ctx.lineTo(px, py + cellSize);
-            ctx.stroke();
-          }
-          // 右边
-          if (x === width - 1 || matchedColors[idx + 1].code !== color.code || matchedColors[idx + 1].isBg) {
-            ctx.beginPath();
-            ctx.moveTo(px + cellSize, py);
-            ctx.lineTo(px + cellSize, py + cellSize);
-            ctx.stroke();
-          }
         }
       }
     }
@@ -238,55 +176,6 @@ class BeadRenderer {
     }
 
     return this.canvas;
-  }
-
-  /**
-   * 检测边缘格子
-   * 对每个格子检查上下左右邻居的颜色，如果差异超过阈值则标记为边缘
-   * @param {Array} matchedColors - 匹配后的颜色数组
-   * @param {number} width - 网格宽度
-   * @param {number} height - 网格高度
-   * @param {number} sensitivity - 边缘灵敏度 (1-10, 默认5)
-   * @returns {Uint8Array} 边缘标记矩阵 (1=边缘, 0=非边缘)
-   */
-  detectEdges(matchedColors, width, height, sensitivity = 5) {
-    const edges = new Uint8Array(width * height);
-    // 灵敏度映射到色差阈值: 灵敏度越高 → 阈值越低 → 更多边缘
-    const threshold = 120 - sensitivity * 10; // 1→110(宽松), 10→20(极敏感)
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = y * width + x;
-        const current = matchedColors[idx];
-
-        // 检查四个方向的邻居
-        const neighbors = [];
-        if (x > 0)          neighbors.push(matchedColors[idx - 1]);       // 左
-        if (x < width - 1)  neighbors.push(matchedColors[idx + 1]);       // 右
-        if (y > 0)          neighbors.push(matchedColors[idx - width]);    // 上
-        if (y < height - 1) neighbors.push(matchedColors[idx + width]);    // 下
-
-        // 计算与邻居的最大色差
-        let maxDiff = 0;
-        for (const neighbor of neighbors) {
-          // 跳过背景标记的格子
-          if (current.isBg || neighbor.isBg) continue;
-
-          const diff = Math.sqrt(
-            Math.pow(current.r - neighbor.r, 2) +
-            Math.pow(current.g - neighbor.g, 2) +
-            Math.pow(current.b - neighbor.b, 2)
-          );
-          if (diff > maxDiff) maxDiff = diff;
-        }
-
-        if (maxDiff >= threshold) {
-          edges[idx] = 1;
-        }
-      }
-    }
-
-    return edges;
   }
 
   /**

@@ -859,16 +859,10 @@ select:focus {
   flex-shrink: 0;
 }
 
-/* ========== 边缘强化选项区域 ========== */
-#edgeOptions {
+/* ========== 边缘锐化选项区域 ========== */
+#sharpenOptions {
   padding: 12px;
   background: rgba(99,102,241,0.03);
   border-radius: var(--radius-sm);
   border: 1px solid rgba(99,102,241,0.1);
-}
-
-.edge-width-btn.active {
-  border-color: var(--primary) !important;
-  color: var(--primary) !important;
-  background: rgba(99,102,241,0.08) !important;
 }

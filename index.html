@@ -132,36 +132,25 @@
               </div>
             </div>
 
-            <!-- 边缘轮廓强化 -->
+            <!-- 边缘锐化 -->
             <div class="settings-section">
-              <div class="settings-title">✏️ 边缘轮廓强化</div>
+              <div class="settings-title">✏️ 边缘锐化</div>
               <div class="input-group">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" id="edgeEnhance">
-                  <span style="font-size: 13px;">启用边缘描边</span>
+                  <input type="checkbox" id="sharpenEnabled">
+                  <span style="font-size: 13px;">启用边缘锐化（让轮廓更清晰）</span>
                 </label>
               </div>
-              <div id="edgeOptions" style="display: none; flex-direction: column; gap: 12px; margin-top: 8px;">
+              <div id="sharpenOptions" style="display: none; margin-top: 8px;">
                 <div class="input-group">
-                  <label>灵敏度 <span id="edgeSensValue" style="color: var(--primary); font-weight: 600;">5</span>
-                    <span style="font-size: 11px; color: var(--text-muted);">(1=宽松, 10=精细)</span>
+                  <label>锐化强度 <span id="sharpenValue" style="color: var(--primary); font-weight: 600;">50</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">(0=柔和, 100=强烈)</span>
                   </label>
-                  <input type="range" id="edgeSensitivity" min="1" max="10" value="5" style="width: 100%; accent-color: var(--primary);">
-                </div>
-                <div class="input-group">
-                  <label>描边宽度</label>
-                  <div class="input-row" style="gap: 6px; align-items: center;">
-                    <button class="preset-btn edge-width-btn" data-value="1" title="细线">细</button>
-                    <button class="preset-btn edge-width-btn active" data-value="2" title="中等">中</button>
-                    <button class="preset-btn edge-width-btn" data-value="3" title="粗线">粗</button>
+                  <input type="range" id="sharpenStrength" min="0" max="100" value="50" style="width: 100%; accent-color: var(--primary);">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+                    <span>柔和</span>
+                    <span>强烈</span>
                   </div>
-                </div>
-                <div class="input-group">
-                  <label style="display: flex; align-items: center; gap: 8px;">
-                    描边颜色
-                    <input type="color" id="edgeColorPicker" value="#222222" style="width: 32px; height: 32px; border: none; cursor: pointer; border-radius: 6px;">
-                    <span id="edgeColorHex" style="font-size: 12px; color: var(--text-muted);">#222222</span>
-                  </label>
                 </div>
               </div>
             </div>

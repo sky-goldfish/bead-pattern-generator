@@ -56,13 +56,11 @@
   const seriesGrid = $('#seriesGrid');
   const colorCountLabel = $('#colorCountLabel');
 
-  // 新增：边缘轮廓强化
-  const edgeEnhanceCheckbox = $('#edgeEnhance');
-  const edgeOptionsDiv = $('#edgeOptions');
-  const edgeSensitivitySlider = $('#edgeSensitivity');
-  const edgeSensValueLabel = $('#edgeSensValue');
-  const edgeColorPicker = $('#edgeColorPicker');
-  const edgeColorHexLabel = $('#edgeColorHex');
+  // 新增：边缘锐化
+  const sharpenEnabledCheckbox = $('#sharpenEnabled');
+  const sharpenOptionsDiv = $('#sharpenOptions');
+  const sharpenStrengthSlider = $('#sharpenStrength');
+  const sharpenValueLabel = $('#sharpenValue');
 
   // ========== 状态 ==========
   let currentImage = null;    // 当前加载的图片
@@ -234,33 +232,18 @@
     thresholdValueLabel.textContent = bgThresholdSlider.value;
   });
 
-  // 边缘强化开关
-  edgeEnhanceCheckbox.addEventListener('change', () => {
-    if (edgeEnhanceCheckbox.checked) {
-      edgeOptionsDiv.style.display = 'flex';
+  // 边缘锐化开关
+  sharpenEnabledCheckbox.addEventListener('change', () => {
+    if (sharpenEnabledCheckbox.checked) {
+      sharpenOptionsDiv.style.display = 'block';
     } else {
-      edgeOptionsDiv.style.display = 'none';
+      sharpenOptionsDiv.style.display = 'none';
     }
   });
 
-  // 边缘灵敏度滑块
-  edgeSensitivitySlider.addEventListener('input', () => {
-    edgeSensValueLabel.textContent = edgeSensitivitySlider.value;
-  });
-
-  // 边缘描边颜色选择
-  edgeColorPicker.addEventListener('input', () => {
-    edgeColorHexLabel.textContent = edgeColorPicker.value.toUpperCase();
-  });
-
-  // 描边宽度预设按钮
-  let currentEdgeWidth = 2;
-  document.querySelectorAll('.edge-width-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.edge-width-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentEdgeWidth = parseInt(btn.dataset.value);
-    });
+  // 锐化强度滑块
+  sharpenStrengthSlider.addEventListener('input', () => {
+    sharpenValueLabel.textContent = sharpenStrengthSlider.value;
   });
 
   // 生成按钮
@@ -287,10 +270,6 @@
       showColorCodes: showColorCodesCheckbox.checked,
       title: '拼豆图纸',
       colorStats,
-      edgeEnhance: edgeEnhanceCheckbox.checked,
-      edgeSensitivity: parseInt(edgeSensitivitySlider.value) || 5,
-      edgeColor: edgeColorPicker.value,
-      edgeWidth: currentEdgeWidth,
     });
     ExportManager.downloadPNG(fullCanvas, '拼豆图纸.png');
   });
@@ -312,10 +291,6 @@
       showColorCodes: showColorCodesCheckbox.checked,
       title: '拼豆图纸',
       colorStats,
-      edgeEnhance: edgeEnhanceCheckbox.checked,
-      edgeSensitivity: parseInt(edgeSensitivitySlider.value) || 5,
-      edgeColor: edgeColorPicker.value,
-      edgeWidth: currentEdgeWidth,
     });
     ExportManager.print(fullCanvas);
   });
@@ -405,8 +380,10 @@
     try {
       // 1. 像素化
       progressText.textContent = '正在像素化处理...';
+      const sharpness = sharpenEnabledCheckbox.checked ? (parseInt(sharpenStrengthSlider.value) || 50) : 0;
+      if (sharpness > 0) progressText.textContent = '正在像素化并锐化边缘...';
       const { pixelData, width: pw, height: ph } = pixelEngine.pixelate(
-        currentImage, width, height, keepRatioCheckbox.checked
+        currentImage, width, height, keepRatioCheckbox.checked, sharpness
       );
       resultWidth = pw;
       resultHeight = ph;
@@ -479,10 +456,6 @@
       progressText.textContent = '正在渲染图纸...';
       const cellSize = Math.max(8, Math.min(20, Math.floor(700 / Math.max(pw, ph))));
 
-      // 边缘强化参数
-      const edgeEnhance = edgeEnhanceCheckbox.checked;
-      const edgeSensitivity = parseInt(edgeSensitivitySlider.value) || 5;
-
       const canvas = renderer.render({
         matchedColors,
         width: pw,
@@ -490,10 +463,6 @@
         cellSize,
         showGridLines: showGridLinesCheckbox.checked,
         showColorCodes: showColorCodesCheckbox.checked,
-        edgeEnhance,
-        edgeSensitivity,
-        edgeColor: edgeColorPicker.value,
-        edgeWidth: currentEdgeWidth,
       });
 
       patternCanvas.width = canvas.width;
