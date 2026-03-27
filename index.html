@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拼豆图纸生成器 | Bead Pattern Generator</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+</head>
+<body>
+
+  <!-- 进度遮罩 -->
+  <div class="progress-overlay" id="progressOverlay">
+    <div class="progress-card">
+      <div class="spinner"></div>
+      <div class="progress-text" id="progressText">正在生成拼豆图纸...</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">🧩</div>
+        <h1>拼豆图纸生成器</h1>
+      </div>
+      <p class="subtitle">上传照片，自动转换为拼豆图纸，支持 MARD / Perler 色卡匹配和用量统计</p>
+    </header>
+
+    <!-- 主布局 -->
+    <div class="main-grid">
+      <!-- 左侧：控制面板 -->
+      <aside>
+        <!-- 上传卡片 -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <div class="card-icon">📷</div>
+            <h2>上传图片</h2>
+          </div>
+          <div class="card-body">
+            <div class="upload-area" id="uploadArea">
+              <div class="upload-icon">🖼️</div>
+              <p class="upload-text">拖拽图片到这里，或点击选择</p>
+              <p class="upload-hint">支持 JPG / PNG / WEBP，建议 500×500 以上</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+            <div class="preview-container" id="previewContainer">
+              <div class="preview-wrapper">
+                <img id="originalPreview" alt="预览">
+                <div class="preview-overlay">
+                  <span id="imageSize"></span>
+                  <span id="imageDimensions"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 设置卡片 -->
+        <div class="card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <div class="card-icon">⚙️</div>
+            <h2>图纸设置</h2>
+          </div>
+          <div class="card-body">
+            <!-- 色卡品牌选择 -->
+            <div class="settings-section">
+              <div class="settings-title">🎯 色卡品牌</div>
+              <div class="brand-selector">
+                <button class="brand-btn active" data-brand="MARD">
+                  <span class="brand-name">MARD</span>
+                  <span class="brand-desc">291 色 · 15 系列</span>
+                </button>
+                <button class="brand-btn" data-brand="PERLER">
+                  <span class="brand-name">Perler</span>
+                  <span class="brand-desc">57 色</span>
+                </button>
+              </div>
+              <div class="brand-info">
+                当前可选: <span id="colorCountLabel" style="color: var(--primary); font-weight: 600;">291</span> 色
+              </div>
+            </div>
+
+            <!-- MARD 系列筛选 -->
+            <div class="settings-section" id="mardSeriesSection">
+              <div class="settings-title">
+                系列筛选
+                <span style="font-size: 11px; font-weight: 400; color: var(--text-muted);">（可多选，不选则全部可用）</span>
+              </div>
+              <div style="margin-bottom: 8px; display: flex; gap: 8px;">
+                <button class="preset-btn" id="selectAllSeries" style="flex: 1; font-size: 11px;">全选</button>
+                <button class="preset-btn" id="deselectAllSeries" style="flex: 1; font-size: 11px;">全不选</button>
+              </div>
+              <div class="series-grid" id="seriesGrid">
+                <!-- 由 JS 动态生成 -->
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-title">网格尺寸</div>
+              <div class="input-group">
+                <label>宽度（格数）</label>
+                <div class="input-row">
+                  <input type="number" id="gridWidth" value="50" min="10" max="200" step="1">
+                </div>
+              </div>
+              <div class="input-group">
+                <label>高度（格数）</label>
+                <div class="input-row">
+                  <input type="number" id="gridHeight" value="50" min="10" max="200" step="1">
+                </div>
+              </div>
+              <div style="margin-top: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="keepRatio" checked>
+                  <span style="font-size: 13px; color: var(--text-muted);">保持图片宽高比</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-title">显示选项</div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="showGridLines" checked>
+                  <span style="font-size: 13px;">显示网格线</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="showColorCodes">
+                  <span style="font-size: 13px;">在格子上显示色号</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 边缘轮廓强化 -->
+            <div class="settings-section">
+              <div class="settings-title">✏️ 边缘轮廓强化</div>
+              <div class="input-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="edgeEnhance">
+                  <span style="font-size: 13px;">启用边缘描边</span>
+                </label>
+              </div>
+              <div id="edgeOptions" style="display: none; flex-direction: column; gap: 12px; margin-top: 8px;">
+                <div class="input-group">
+                  <label>灵敏度 <span id="edgeSensValue" style="color: var(--primary); font-weight: 600;">5</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">(1=宽松, 10=精细)</span>
+                  </label>
+                  <input type="range" id="edgeSensitivity" min="1" max="10" value="5" style="width: 100%; accent-color: var(--primary);">
+                </div>
+                <div class="input-group">
+                  <label>描边宽度</label>
+                  <div class="input-row" style="gap: 6px; align-items: center;">
+                    <button class="preset-btn edge-width-btn" data-value="1" title="细线">细</button>
+                    <button class="preset-btn edge-width-btn active" data-value="2" title="中等">中</button>
+                    <button class="preset-btn edge-width-btn" data-value="3" title="粗线">粗</button>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label style="display: flex; align-items: center; gap: 8px;">
+                    描边颜色
+                    <input type="color" id="edgeColorPicker" value="#222222" style="width: 32px; height: 32px; border: none; cursor: pointer; border-radius: 6px;">
+                    <span id="edgeColorHex" style="font-size: 12px; color: var(--text-muted);">#222222</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 颜色种类限制 -->
+            <div class="settings-section">
+              <div class="settings-title">🎨 颜色种类限制</div>
+              <div class="input-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="limitColors">
+                  <span style="font-size: 13px;">启用颜色限制（合并相似色）</span>
+                </label>
+              </div>
+              <div class="input-group" id="maxColorGroup" style="opacity: 0.4; pointer-events: none;">
+                <label>最大颜色种类 <span style="color: var(--primary); font-weight: 600;">（5~30）</span></label>
+                <div class="input-row">
+                  <input type="number" id="maxColors" value="12" min="5" max="30" step="1">
+                  <div class="color-presets" style="display: flex; gap: 6px; align-items: center;">
+                    <button class="preset-btn" data-value="6" title="6色">6</button>
+                    <button class="preset-btn" data-value="10" title="10色">10</button>
+                    <button class="preset-btn" data-value="12" title="12色">12</button>
+                    <button class="preset-btn" data-value="16" title="16色">16</button>
+                    <button class="preset-btn" data-value="24" title="24色">24</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 背景忽略 -->
+            <div class="settings-section">
+              <div class="settings-title">🖼️ 背景处理</div>
+              <div class="input-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="removeBg">
+                  <span style="font-size: 13px;">忽略背景色</span>
+                </label>
+              </div>
+              <div id="bgOptions" style="display: none; flex-direction: column; gap: 12px;">
+                <div class="input-group">
+                  <label>背景色来源</label>
+                  <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-secondary btn-detect-bg" id="autoDetectBg" style="flex: 1; padding: 8px 12px; font-size: 13px;">
+                      🔍 自动检测（取四角）
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <input type="color" id="bgColorPicker" value="#ffffff" style="width: 36px; height: 36px; border: none; cursor: pointer; border-radius: 6px;">
+                      <span style="font-size: 12px; color: var(--text-muted);">手动选</span>
+                    </div>
+                  </div>
+                </div>
+                <div id="bgPreview" style="display: none; padding: 10px 14px; background: #f1f5f9; border-radius: var(--radius-sm); align-items: center; gap: 10px;">
+                  <div id="bgSwatch" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--border);"></div>
+                  <span id="bgHex" style="font-size: 13px; color: var(--text-muted);">未检测</span>
+                </div>
+                <div class="input-group">
+                  <label>相似度阈值 <span id="thresholdValue" style="color: var(--primary); font-weight: 600;">15</span></label>
+                  <input type="range" id="bgThreshold" min="5" max="40" value="15" style="width: 100%; accent-color: var(--primary);">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+                    <span>精确匹配</span>
+                    <span>宽松匹配</span>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label>背景替换为</label>
+                  <select id="bgReplacement" style="width: 100%; padding: 8px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 14px;">
+                    <option value="transparent">透明（不显示格子）</option>
+                    <option value="white">白色</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-full" id="generateBtn" disabled style="margin-top: 20px;">
+              ✨ 生成拼豆图纸
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 右侧：结果区域 -->
+      <main class="card result-card">
+        <!-- 空状态 -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🎨</div>
+          <h3>准备开始</h3>
+          <p>上传一张照片，设置网格大小，即可生成精美的拼豆图纸</p>
+        </div>
+
+        <!-- 结果内容 -->
+        <div class="result-content" id="resultContent">
+          <!-- 标签页 -->
+          <div class="result-tabs">
+            <button class="tab-btn active" data-tab="pattern">🧩 图纸预览</button>
+            <button class="tab-btn" data-tab="colors">🎨 颜色清单</button>
+          </div>
+
+          <!-- 图纸预览标签 -->
+          <div class="tab-content active" id="tab-pattern">
+            <div class="stats-summary" id="statsSummary">
+              <div class="stat-item">
+                <div class="stat-value" id="statWidth">-</div>
+                <div class="stat-label">宽度（格）</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="statHeight">-</div>
+                <div class="stat-label">高度（格）</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="statColors">-</div>
+                <div class="stat-label">颜色种类</div>
+              </div>
+            </div>
+            <canvas id="patternCanvas"></canvas>
+          </div>
+
+          <!-- 颜色清单标签 -->
+          <div class="tab-content" id="tab-colors">
+            <div class="color-list" id="colorList"></div>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div style="padding: 16px 24px; border-top: 1px solid var(--border);">
+            <div class="btn-group">
+              <button class="btn btn-success" id="downloadPng">📥 下载图纸 PNG</button>
+              <button class="btn btn-secondary" id="downloadTxt">📋 导出颜色清单</button>
+              <button class="btn btn-secondary" id="printBtn">🖨️ 打印图纸</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      <p>色卡数据来自 <a href="https://www.doudougongfang.com/kb/beads/mard-palette" target="_blank">豆豆工坊 MARD 色卡</a> · <a href="https://pixel-beads.com/mard-bead-color-chart" target="_blank">pixel-beads.com</a> · MARD 291色 + Perler 57色</p>
+    </footer>
+  </div>
+
+  <script src="js/color-match.js"></script>
+  <script src="js/pixelation.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
