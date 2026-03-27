@@ -287,6 +287,10 @@
       showColorCodes: showColorCodesCheckbox.checked,
       title: '拼豆图纸',
       colorStats,
+      edgeEnhance: edgeEnhanceCheckbox.checked,
+      edgeSensitivity: parseInt(edgeSensitivitySlider.value) || 5,
+      edgeColor: edgeColorPicker.value,
+      edgeWidth: currentEdgeWidth,
     });
     ExportManager.downloadPNG(fullCanvas, '拼豆图纸.png');
   });
@@ -308,6 +312,10 @@
       showColorCodes: showColorCodesCheckbox.checked,
       title: '拼豆图纸',
       colorStats,
+      edgeEnhance: edgeEnhanceCheckbox.checked,
+      edgeSensitivity: parseInt(edgeSensitivitySlider.value) || 5,
+      edgeColor: edgeColorPicker.value,
+      edgeWidth: currentEdgeWidth,
     });
     ExportManager.print(fullCanvas);
   });
@@ -470,6 +478,11 @@
       // 5. 渲染图纸
       progressText.textContent = '正在渲染图纸...';
       const cellSize = Math.max(8, Math.min(20, Math.floor(700 / Math.max(pw, ph))));
+
+      // 边缘强化参数
+      const edgeEnhance = edgeEnhanceCheckbox.checked;
+      const edgeSensitivity = parseInt(edgeSensitivitySlider.value) || 5;
+
       const canvas = renderer.render({
         matchedColors,
         width: pw,
@@ -477,6 +490,10 @@
         cellSize,
         showGridLines: showGridLinesCheckbox.checked,
         showColorCodes: showColorCodesCheckbox.checked,
+        edgeEnhance,
+        edgeSensitivity,
+        edgeColor: edgeColorPicker.value,
+        edgeWidth: currentEdgeWidth,
       });
 
       patternCanvas.width = canvas.width;
