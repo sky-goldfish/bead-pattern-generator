@@ -37,10 +37,9 @@ class PixelationEngine {
    * @param {number} width 目标宽度 (格子数)
    * @param {number} height 目标高度 (格子数)
    * @param {boolean} maintainAspectRatio 是否保持宽高比
-   * @param {number} sharpness 锐化强度 (0-100, 0=不锐化, 100=最强)
    * @returns {{ pixelData: Uint8ClampedArray, width: number, height: number, previewCanvas: HTMLCanvasElement }}
    */
-  pixelate(img, width, height, maintainAspectRatio = true, sharpness = 0) {
+  pixelate(img, width, height, maintainAspectRatio = true) {
     let targetW = width;
     let targetH = height;
 
@@ -70,12 +69,7 @@ class PixelationEngine {
     this._ctx.drawImage(img, 0, 0, targetW, targetH);
 
     // 提取像素数据
-    let pixelData = this._ctx.getImageData(0, 0, targetW, targetH).data;
-
-    // 第二步：边缘锐化（Unsharp Mask）
-    if (sharpness > 0) {
-      pixelData = this.sharpen(pixelData, targetW, targetH, sharpness);
-    }
+    const pixelData = this._ctx.getImageData(0, 0, targetW, targetH).data;
 
     // 创建预览 canvas (放大后的像素化图像)
     const previewCanvas = document.createElement('canvas');
@@ -85,7 +79,7 @@ class PixelationEngine {
     previewCanvas.height = targetH * scale;
 
     // 将处理后的像素数据写回 canvas
-    const imgData = new ImageData(new Uint8ClampedArray(pixelData), targetW, targetH);
+    const imgData = new ImageData(pixelData, targetW, targetH);
     this._canvas.width = targetW;
     this._canvas.height = targetH;
     this._ctx.putImageData(imgData, 0, 0);
@@ -102,63 +96,6 @@ class PixelationEngine {
       originalWidth: img.naturalWidth,
       originalHeight: img.naturalHeight,
     };
-  }
-
-  /**
-   * Unsharp Mask 边缘锐化
-   * 原理: result = original + amount * (original - blurred)
-   * 通过增强原图与模糊图之间的差异来突出边缘
-   *
-   * @param {Uint8ClampedArray} pixelData RGBA 像素数据
-   * @param {number} width 图片宽度
-   * @param {number} height 图片高度
-   * @param {number} strength 锐化强度 (0-100)
-   * @returns {Uint8ClampedArray} 锐化后的像素数据
-   */
-  sharpen(pixelData, width, height, strength) {
-    // strength 0-100 映射到 amount 0.0-1.5
-    const amount = (strength / 100) * 1.5;
-    const result = new Uint8ClampedArray(pixelData.length);
-
-    // 先创建高斯模糊版本 (3x3 卷积核)
-    const blurred = new Float32Array(pixelData.length);
-    const kernel = [
-      1/16, 2/16, 1/16,
-      2/16, 4/16, 2/16,
-      1/16, 2/16, 1/16,
-    ];
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        let r = 0, g = 0, b = 0;
-        for (let ky = -1; ky <= 1; ky++) {
-          for (let kx = -1; kx <= 1; kx++) {
-            const sx = Math.min(width - 1, Math.max(0, x + kx));
-            const sy = Math.min(height - 1, Math.max(0, y + ky));
-            const idx = (sy * width + sx) * 4;
-            const ki = (ky + 1) * 3 + (kx + 1);
-            r += pixelData[idx]     * kernel[ki];
-            g += pixelData[idx + 1] * kernel[ki];
-            b += pixelData[idx + 2] * kernel[ki];
-          }
-        }
-        const idx = (y * width + x) * 4;
-        blurred[idx]     = r;
-        blurred[idx + 1] = g;
-        blurred[idx + 2] = b;
-        blurred[idx + 3] = pixelData[idx + 3];
-      }
-    }
-
-    // Unsharp Mask: result = original + amount * (original - blurred)
-    for (let i = 0; i < pixelData.length; i += 4) {
-      result[i]     = Math.max(0, Math.min(255, Math.round(pixelData[i]     + amount * (pixelData[i]     - blurred[i]))));
-      result[i + 1] = Math.max(0, Math.min(255, Math.round(pixelData[i + 1] + amount * (pixelData[i + 1] - blurred[i + 1]))));
-      result[i + 2] = Math.max(0, Math.min(255, Math.round(pixelData[i + 2] + amount * (pixelData[i + 2] - blurred[i + 2]))));
-      result[i + 3] = pixelData[i + 3]; // alpha 不变
-    }
-
-    return result;
   }
 
   /**

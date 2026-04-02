@@ -39,28 +39,10 @@
   const maxColorGroup = $('#maxColorGroup');
   const maxColorsInput = $('#maxColors');
 
-  // 新增：背景处理
-  const removeBgCheckbox = $('#removeBg');
-  const bgOptions = $('#bgOptions');
-  const autoDetectBgBtn = $('#autoDetectBg');
-  const bgColorPicker = $('#bgColorPicker');
-  const bgPreview = $('#bgPreview');
-  const bgSwatch = $('#bgSwatch');
-  const bgHexLabel = $('#bgHex');
-  const bgThresholdSlider = $('#bgThreshold');
-  const thresholdValueLabel = $('#thresholdValue');
-  const bgReplacementSelect = $('#bgReplacement');
-
-  // 新增：品牌选择 & 系列筛选
+  // 品牌选择 & 系列筛选
   const mardSeriesSection = $('#mardSeriesSection');
   const seriesGrid = $('#seriesGrid');
   const colorCountLabel = $('#colorCountLabel');
-
-  // 新增：边缘锐化
-  const sharpenEnabledCheckbox = $('#sharpenEnabled');
-  const sharpenOptionsDiv = $('#sharpenOptions');
-  const sharpenStrengthSlider = $('#sharpenStrength');
-  const sharpenValueLabel = $('#sharpenValue');
 
   // ========== 状态 ==========
   let currentImage = null;    // 当前加载的图片
@@ -68,8 +50,6 @@
   let colorStats = null;      // 当前颜色统计
   let resultWidth = 0;        // 结果网格宽度
   let resultHeight = 0;       // 结果网格高度
-  let detectedBgColor = null; // 检测到的背景色
-  let pixelDataCache = null;  // 缓存像素数据用于背景检测
 
   // ========== 事件绑定 ==========
 
@@ -199,53 +179,6 @@
     });
   });
 
-  // 背景处理开关
-  removeBgCheckbox.addEventListener('change', () => {
-    if (removeBgCheckbox.checked) {
-      bgOptions.style.display = 'flex';
-    } else {
-      bgOptions.style.display = 'none';
-    }
-  });
-
-  // 自动检测背景
-  autoDetectBgBtn.addEventListener('click', () => {
-    if (!currentImage) {
-      alert('请先上传图片');
-      return;
-    }
-    detectBackground();
-  });
-
-  // 手动选择背景色
-  bgColorPicker.addEventListener('input', () => {
-    const hex = bgColorPicker.value;
-    const r = parseInt(hex.substring(1, 3), 16);
-    const g = parseInt(hex.substring(3, 5), 16);
-    const b = parseInt(hex.substring(5, 7), 16);
-    detectedBgColor = { r, g, b };
-    updateBgPreview(r, g, b, hex);
-  });
-
-  // 阈值滑块
-  bgThresholdSlider.addEventListener('input', () => {
-    thresholdValueLabel.textContent = bgThresholdSlider.value;
-  });
-
-  // 边缘锐化开关
-  sharpenEnabledCheckbox.addEventListener('change', () => {
-    if (sharpenEnabledCheckbox.checked) {
-      sharpenOptionsDiv.style.display = 'block';
-    } else {
-      sharpenOptionsDiv.style.display = 'none';
-    }
-  });
-
-  // 锐化强度滑块
-  sharpenStrengthSlider.addEventListener('input', () => {
-    sharpenValueLabel.textContent = sharpenStrengthSlider.value;
-  });
-
   // 生成按钮
   generateBtn.addEventListener('click', generate);
 
@@ -322,10 +255,6 @@
       gridWidthInput.value = recommended.width;
       gridHeightInput.value = recommended.height;
 
-      // 重置背景检测结果
-      detectedBgColor = null;
-      pixelDataCache = null;
-
       generateBtn.disabled = false;
       hideProgress();
     } catch (err) {
@@ -333,36 +262,6 @@
       alert('图片加载失败，请重试');
       console.error(err);
     }
-  }
-
-  /**
-   * 自动检测背景色
-   */
-  function detectBackground() {
-    if (!currentImage) return;
-
-    // 先做一次小尺寸像素化来获取像素数据
-    const tmpCanvas = document.createElement('canvas');
-    const tmpCtx = tmpCanvas.getContext('2d');
-    const detectW = Math.min(currentImage.naturalWidth, 100);
-    const detectH = Math.round(detectW / (currentImage.naturalWidth / currentImage.naturalHeight));
-    tmpCanvas.width = detectW;
-    tmpCanvas.height = detectH;
-    tmpCtx.drawImage(currentImage, 0, 0, detectW, detectH);
-    const data = tmpCtx.getImageData(0, 0, detectW, detectH).data;
-
-    detectedBgColor = BackgroundProcessor.detectBackground(data, detectW, detectH);
-    const hex = rgbToHex(detectedBgColor.r, detectedBgColor.g, detectedBgColor.b);
-    updateBgPreview(detectedBgColor.r, detectedBgColor.g, detectedBgColor.b, hex);
-  }
-
-  /**
-   * 更新背景预览
-   */
-  function updateBgPreview(r, g, b, hex) {
-    bgSwatch.style.background = hex;
-    bgHexLabel.textContent = `${hex.toUpperCase()}  (RGB: ${r}, ${g}, ${b})`;
-    bgPreview.style.display = 'flex';
   }
 
   /**
@@ -380,42 +279,22 @@
     try {
       // 1. 像素化
       progressText.textContent = '正在像素化处理...';
-      const sharpness = sharpenEnabledCheckbox.checked ? (parseInt(sharpenStrengthSlider.value) || 50) : 0;
-      if (sharpness > 0) progressText.textContent = '正在像素化并锐化边缘...';
       const { pixelData, width: pw, height: ph } = pixelEngine.pixelate(
-        currentImage, width, height, keepRatioCheckbox.checked, sharpness
+        currentImage, width, height, keepRatioCheckbox.checked
       );
       resultWidth = pw;
       resultHeight = ph;
       await sleep(50);
 
-      // 2. 背景处理（如果启用）
-      let processedData = pixelData;
-      if (removeBgCheckbox.checked && detectedBgColor) {
-        progressText.textContent = '正在处理背景...';
-        const threshold = parseInt(bgThresholdSlider.value) || 15;
-        const replacement = bgReplacementSelect.value;
-        processedData = BackgroundProcessor.processBackground(
-          pixelData, detectedBgColor, threshold, replacement
-        );
-        await sleep(50);
-      }
-
-      // 3. 颜色匹配（可选 K-Means 限制）
-      // 获取当前品牌的白色/透明占位色号
-      const brand = BRANDS[colorMatcher.getBrand()];
-      const whiteCode = colorMatcher.getBrand() === 'MARD' ? 'H1' : 'P01';
-      const whiteMatch = { code: whiteCode, hex: '#ffffff', r: 255, g: 255, b: 255, distance: 0, isBg: true };
-
+      // 2. 颜色匹配（可选 K-Means 限制）
       if (limitColorsCheckbox.checked) {
         progressText.textContent = '正在聚类合并颜色...';
         const maxColors = Math.max(5, Math.min(30, parseInt(maxColorsInput.value) || 12));
 
         // 提取所有像素 RGB
         const allColors = [];
-        for (let i = 0; i < processedData.length; i += 4) {
-          if (processedData[i + 3] === 0) continue; // 跳过透明像素
-          allColors.push({ r: processedData[i], g: processedData[i + 1], b: processedData[i + 2] });
+        for (let i = 0; i < pixelData.length; i += 4) {
+          allColors.push({ r: pixelData[i], g: pixelData[i + 1], b: pixelData[i + 2] });
         }
 
         // K-Means 聚类
@@ -423,12 +302,8 @@
 
         // 用聚类中心替换后，再匹配色号
         matchedColors = [];
-        for (let i = 0; i < processedData.length; i += 4) {
-          if (processedData[i + 3] === 0) {
-            matchedColors.push(whiteMatch);
-            continue;
-          }
-          const original = { r: processedData[i], g: processedData[i + 1], b: processedData[i + 2] };
+        for (let i = 0; i < pixelData.length; i += 4) {
+          const original = { r: pixelData[i], g: pixelData[i + 1], b: pixelData[i + 2] };
           const quantized = ColorQuantizer.quantize(original, centers);
           matchedColors.push(colorMatcher.findClosest(quantized.r, quantized.g, quantized.b));
         }
@@ -436,23 +311,19 @@
         const brandName = colorMatcher.getBrand() === 'MARD' ? 'MARD' : 'Perler';
         progressText.textContent = `正在匹配 ${brandName} 色号...`;
         matchedColors = [];
-        for (let i = 0; i < processedData.length; i += 4) {
-          if (processedData[i + 3] === 0) {
-            matchedColors.push(whiteMatch);
-            continue;
-          }
-          matchedColors.push(colorMatcher.findClosest(processedData[i], processedData[i + 1], processedData[i + 2]));
+        for (let i = 0; i < pixelData.length; i += 4) {
+          matchedColors.push(colorMatcher.findClosest(pixelData[i], pixelData[i + 1], pixelData[i + 2]));
         }
       }
 
       await sleep(50);
 
-      // 4. 统计颜色
+      // 3. 统计颜色
       progressText.textContent = '正在统计颜色用量...';
       colorStats = colorMatcher.countColors(matchedColors);
       await sleep(50);
 
-      // 5. 渲染图纸
+      // 4. 渲染图纸
       progressText.textContent = '正在渲染图纸...';
       const cellSize = Math.max(8, Math.min(20, Math.floor(700 / Math.max(pw, ph))));
 
@@ -519,10 +390,6 @@
   }
 
   // ========== 工具函数 ==========
-
-  function rgbToHex(r, g, b) {
-    return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
-  }
 
   function showProgress(text) {
     progressText.textContent = text;

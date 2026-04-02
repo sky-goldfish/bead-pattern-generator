@@ -670,24 +670,6 @@ input[type="checkbox"] {
   transform: scale(0.95);
 }
 
-/* ========== 新增：背景选项区域 ========== */
-#bgOptions {
-  padding: 12px;
-  background: rgba(99,102,241,0.03);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(99,102,241,0.1);
-}
-
-.btn-detect-bg {
-  transition: all 0.2s;
-}
-
-.btn-detect-bg:hover {
-  background: var(--primary) !important;
-  color: white !important;
-  border-color: var(--primary) !important;
-}
-
 /* ========== 新增：滑块样式 ========== */
 input[type="range"] {
   height: 6px;
@@ -721,34 +703,7 @@ input[type="range"]::-moz-range-thumb {
   border: none;
 }
 
-/* ========== 新增：颜色选择器美化 ========== */
-input[type="color"] {
-  -webkit-appearance: none;
-  border: none;
-  padding: 0;
-}
-
-input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-input[type="color"]::-webkit-color-swatch {
-  border: 2px solid var(--border);
-  border-radius: 6px;
-}
-
-/* ========== 新增：选择框美化 ========== */
-select {
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-select:focus {
-  border-color: var(--primary);
-}
-
-/* ========== 新增：启用状态 ========== */
+/* ========== 启用状态 ========== */
 #maxColorGroup.enabled {
   opacity: 1;
   pointer-events: auto;
@@ -859,10 +814,3 @@ select:focus {
   flex-shrink: 0;
 }
 
-/* ========== 边缘锐化选项区域 ========== */
-#sharpenOptions {
-  padding: 12px;
-  background: rgba(99,102,241,0.03);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(99,102,241,0.1);
-}

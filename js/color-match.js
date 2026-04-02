@@ -636,117 +636,6 @@ class ColorQuantizer {
 }
 
 // ============================================================
-// 背景处理器
-// 用于检测和忽略背景色
-// ============================================================
-
-class BackgroundProcessor {
-  /**
-   * 自动检测背景色（取图片四角最常见的颜色）
-   * @param {Uint8ClampedArray} pixelData RGBA 像素数据
-   * @param {number} width 图片宽度
-   * @param {number} height 图片高度
-   * @returns {{r, g, b}} 检测到的背景色
-   */
-  static detectBackground(pixelData, width, height) {
-    const sampleSize = 5; // 从角落采样区域大小
-    const cornerColors = [];
-
-    // 四角采样
-    const corners = [
-      { x: 0, y: 0 },                           // 左上
-      { x: width - sampleSize, y: 0 },          // 右上
-      { x: 0, y: height - sampleSize },         // 左下
-      { x: width - sampleSize, y: height - sampleSize }, // 右下
-    ];
-
-    for (const corner of corners) {
-      for (let dy = 0; dy < sampleSize; dy++) {
-        for (let dx = 0; dx < sampleSize; dx++) {
-          const idx = ((corner.y + dy) * width + (corner.x + dx)) * 4;
-          cornerColors.push({
-            r: pixelData[idx],
-            g: pixelData[idx + 1],
-            b: pixelData[idx + 2],
-          });
-        }
-      }
-    }
-
-    // 取平均值作为背景色
-    const avgR = Math.round(cornerColors.reduce((s, c) => s + c.r, 0) / cornerColors.length);
-    const avgG = Math.round(cornerColors.reduce((s, c) => s + c.g, 0) / cornerColors.length);
-    const avgB = Math.round(cornerColors.reduce((s, c) => s + c.b, 0) / cornerColors.length);
-
-    return { r: avgR, g: avgG, b: avgB };
-  }
-
-  /**
-   * 检查颜色是否为背景色
-   * @param {{r, g, b}} color 待检查颜色
-   * @param {{r, g, b}} bgColor 背景色
-   * @param {number} threshold 相似度阈值 (0-100)
-   * @returns {boolean}
-   */
-  static isBackground(color, bgColor, threshold = 15) {
-    const dist = ColorUtils.weightedRgbDistance(
-      color.r, color.g, color.b,
-      bgColor.r, bgColor.g, bgColor.b
-    );
-    // 将距离映射到 0-100 范围
-    const normalizedDist = (dist / Math.sqrt(255*255*3)) * 100;
-    return normalizedDist < threshold;
-  }
-
-  /**
-   * 处理像素数据，将背景设为透明或白色
-   * @param {Uint8ClampedArray} pixelData RGBA 像素数据
-   * @param {{r, g, b}} bgColor 背景色
-   * @param {number} threshold 阈值
-   * @param {string} replacement 替换方式: 'transparent' | 'white' | 'custom'
-   * @param {{r, g, b}} customColor 自定义替换色
-   * @returns {Uint8ClampedArray} 处理后的像素数据
-   */
-  static processBackground(pixelData, bgColor, threshold = 15, replacement = 'transparent', customColor = null) {
-    const result = new Uint8ClampedArray(pixelData.length);
-
-    for (let i = 0; i < pixelData.length; i += 4) {
-      const r = pixelData[i];
-      const g = pixelData[i + 1];
-      const b = pixelData[i + 2];
-
-      if (this.isBackground({ r, g, b }, bgColor, threshold)) {
-        // 背景处理
-        if (replacement === 'transparent') {
-          result[i] = 255;
-          result[i + 1] = 255;
-          result[i + 2] = 255;
-          result[i + 3] = 0; // 透明
-        } else if (replacement === 'white') {
-          result[i] = 255;
-          result[i + 1] = 255;
-          result[i + 2] = 255;
-          result[i + 3] = 255;
-        } else if (replacement === 'custom' && customColor) {
-          result[i] = customColor.r;
-          result[i + 1] = customColor.g;
-          result[i + 2] = customColor.b;
-          result[i + 3] = 255;
-        }
-      } else {
-        // 保留原色
-        result[i] = r;
-        result[i + 1] = g;
-        result[i + 2] = b;
-        result[i + 3] = pixelData[i + 3];
-      }
-    }
-
-    return result;
-  }
-}
-
-// ============================================================
 // 颜色匹配器 (支持多品牌 + 系列筛选)
 // 使用 CIE Lab ΔE 作为主要匹配标准，确保人眼感知准确
 // ============================================================
@@ -927,7 +816,7 @@ class ColorMatcher {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     MARD_PALETTE, PERLER_PALETTE, MARD_SERIES, BRANDS,
-    ColorUtils, ColorMatcher, ColorQuantizer, BackgroundProcessor,
+    ColorUtils, ColorMatcher, ColorQuantizer,
     getSeriesFromCode, getMardSeriesCount,
   };
 }

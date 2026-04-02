@@ -132,30 +132,6 @@
               </div>
             </div>
 
-            <!-- 边缘锐化 -->
-            <div class="settings-section">
-              <div class="settings-title">✏️ 边缘锐化</div>
-              <div class="input-group">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" id="sharpenEnabled">
-                  <span style="font-size: 13px;">启用边缘锐化（让轮廓更清晰）</span>
-                </label>
-              </div>
-              <div id="sharpenOptions" style="display: none; margin-top: 8px;">
-                <div class="input-group">
-                  <label>锐化强度 <span id="sharpenValue" style="color: var(--primary); font-weight: 600;">50</span>
-                    <span style="font-size: 11px; color: var(--text-muted);">(0=柔和, 100=强烈)</span>
-                  </label>
-                  <input type="range" id="sharpenStrength" min="0" max="100" value="50" style="width: 100%; accent-color: var(--primary);">
-                  <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
-                    <span>柔和</span>
-                    <span>强烈</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 颜色种类限制 -->
             <div class="settings-section">
               <div class="settings-title">🎨 颜色种类限制</div>
               <div class="input-group">
@@ -175,50 +151,6 @@
                     <button class="preset-btn" data-value="16" title="16色">16</button>
                     <button class="preset-btn" data-value="24" title="24色">24</button>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 背景忽略 -->
-            <div class="settings-section">
-              <div class="settings-title">🖼️ 背景处理</div>
-              <div class="input-group">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" id="removeBg">
-                  <span style="font-size: 13px;">忽略背景色</span>
-                </label>
-              </div>
-              <div id="bgOptions" style="display: none; flex-direction: column; gap: 12px;">
-                <div class="input-group">
-                  <label>背景色来源</label>
-                  <div style="display: flex; gap: 8px; align-items: center;">
-                    <button class="btn btn-secondary btn-detect-bg" id="autoDetectBg" style="flex: 1; padding: 8px 12px; font-size: 13px;">
-                      🔍 自动检测（取四角）
-                    </button>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                      <input type="color" id="bgColorPicker" value="#ffffff" style="width: 36px; height: 36px; border: none; cursor: pointer; border-radius: 6px;">
-                      <span style="font-size: 12px; color: var(--text-muted);">手动选</span>
-                    </div>
-                  </div>
-                </div>
-                <div id="bgPreview" style="display: none; padding: 10px 14px; background: #f1f5f9; border-radius: var(--radius-sm); align-items: center; gap: 10px;">
-                  <div id="bgSwatch" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--border);"></div>
-                  <span id="bgHex" style="font-size: 13px; color: var(--text-muted);">未检测</span>
-                </div>
-                <div class="input-group">
-                  <label>相似度阈值 <span id="thresholdValue" style="color: var(--primary); font-weight: 600;">15</span></label>
-                  <input type="range" id="bgThreshold" min="5" max="40" value="15" style="width: 100%; accent-color: var(--primary);">
-                  <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
-                    <span>精确匹配</span>
-                    <span>宽松匹配</span>
-                  </div>
-                </div>
-                <div class="input-group">
-                  <label>背景替换为</label>
-                  <select id="bgReplacement" style="width: 100%; padding: 8px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 14px;">
-                    <option value="transparent">透明（不显示格子）</option>
-                    <option value="white">白色</option>
-                  </select>
                 </div>
               </div>
             </div>
